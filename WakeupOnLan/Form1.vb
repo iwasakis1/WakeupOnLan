@@ -49,6 +49,21 @@ Public Class Form1
 
         'UDP接続を終了
         UDP.Close()
+
+        Dim p As New System.Net.NetworkInformation.Ping()
+        Label3.ForeColor = Color.Gray
+        For i = 0 To 100
+            Label4.Text = $"{i + 1}" : Label4.Update()
+            Dim reply As System.Net.NetworkInformation.PingReply = p.Send($"{strIP}", 100)
+            If reply.Status = System.Net.NetworkInformation.IPStatus.Success Then
+                Label3.ForeColor = Color.Green
+                Exit For
+            Else
+                Label3.ForeColor = Color.Gray
+            End If
+            System.Threading.Thread.Sleep(1000)
+        Next
+
     End Sub
 
     Private Sub Form1_Closing(sender As Object, e As CancelEventArgs) Handles Me.Closing
