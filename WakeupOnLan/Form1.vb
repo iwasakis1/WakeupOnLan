@@ -1,10 +1,55 @@
 ﻿Imports System.ComponentModel
+Imports System
+Imports System.Threading
 
 Public Class Form1
 
+    Private Sub Form1_Load(sender As Object, e As EventArgs) Handles Me.Load
+        Dim fileName As String = $"{Application.StartupPath}\config.xml"
+
+        'XmlSerializerオブジェクトを作成
+        Dim serializer As New System.Xml.Serialization.XmlSerializer(
+            GetType(SampleClass))
+        '読み込むファイルを開く
+        Try
+            Dim sr As New System.IO.StreamReader(
+            fileName, New System.Text.UTF8Encoding(False))
+            'XMLファイルから読み込み、逆シリアル化する
+            Dim obj As SampleClass =
+            DirectCast(serializer.Deserialize(sr), SampleClass)
+
+            TextBox1.Text = obj.MAC
+            TextBox2.Text = obj.IP
+
+            'ファイルを閉じる
+            sr.Close()
+        Catch ex As Exception
+            TextBox1.Text = "XX:XX:XX:XX:XX:XX"
+            TextBox2.Text = "192.168.XXX.XX"
+        End Try
+
+        Dim p As New System.Net.NetworkInformation.Ping()
+        Try
+            Dim reply As System.Net.NetworkInformation.PingReply = p.Send($"{TextBox2.Text }", 100)
+            If reply.Status = System.Net.NetworkInformation.IPStatus.Success Then
+                Label3.ForeColor = Color.Green
+                Label4.Text = "起動済み。"
+            Else
+                Label3.ForeColor = Color.Black
+                Label4.Text = "起動してません。"
+            End If
+        Catch ex As Exception
+            Label3.ForeColor = Color.Gray
+            Label4.Text = "状態不明"
+        End Try
+
+        Timer1.Enabled = False
+    End Sub
 
 
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        Timer1.Enabled = False
+
         Dim strMAC As String = TextBox1.Text
         Dim strIP As String = TextBox2.Text
 
@@ -50,19 +95,8 @@ Public Class Form1
         'UDP接続を終了
         UDP.Close()
 
-        Dim p As New System.Net.NetworkInformation.Ping()
-        Label3.ForeColor = Color.Gray
-        For i = 0 To 100
-            Label4.Text = $"{i + 1}" : Label4.Update()
-            Dim reply As System.Net.NetworkInformation.PingReply = p.Send($"{strIP}", 100)
-            If reply.Status = System.Net.NetworkInformation.IPStatus.Success Then
-                Label3.ForeColor = Color.Green
-                Exit For
-            Else
-                Label3.ForeColor = Color.Gray
-            End If
-            System.Threading.Thread.Sleep(1000)
-        Next
+        Dim tp = New ThreadedPing
+        tp.SetL(Label3, Label4, strIP)
 
     End Sub
 
@@ -87,35 +121,74 @@ Public Class Form1
         sw.Close()
     End Sub
 
-    Private Sub Form1_Load(sender As Object, e As EventArgs) Handles Me.Load
-        Dim fileName As String = $"{Application.StartupPath}\config.xml"
 
-        'XmlSerializerオブジェクトを作成
-        Dim serializer As New System.Xml.Serialization.XmlSerializer(
-            GetType(SampleClass))
-        '読み込むファイルを開く
-        Try
-            Dim sr As New System.IO.StreamReader(
-            fileName, New System.Text.UTF8Encoding(False))
-            'XMLファイルから読み込み、逆シリアル化する
-            Dim obj As SampleClass =
-            DirectCast(serializer.Deserialize(sr), SampleClass)
 
-            TextBox1.Text = obj.MAC
-            TextBox2.Text = obj.IP
+    Public Class ThreadedPing
+        Private L3, L4 As Label
+        Private strIP = ""
+        Private once = False
 
-            'ファイルを閉じる
-            sr.Close()
-        Catch ex As Exception
-            TextBox1.Text = "XX:XX:XX:XX:XX:XX"
-            TextBox2.Text = "192.168.XXX.XX"
-        End Try
+        Private Delegate Sub D_L4UpdText(ByVal txt As String)
+        Private Delegate Sub D_L3UpdCol(ByVal c As Color)
+
+        Public Sub L4UpdText(ByVal txt As String)
+            L4.Text = txt
+            L4.Update()
+        End Sub
+        Public Sub L3UpdCol(ByVal c As Color)
+            L3.ForeColor = c
+            L3.Update()
+        End Sub
+
+        Public Sub SetL(l1 As Label, l2 As Label, s As String, Optional ByVal f As Boolean = False)
+            L3 = l1
+            L4 = l2
+            strIP = s
+            once = f
+
+            Dim thread As New Thread(New ThreadStart(AddressOf ThreadMethod))
+            thread.IsBackground = True
+            thread.Start()
+        End Sub
+
+        ' 別スレッドで動作させるメソッド
+        Private Sub ThreadMethod() ' （6）
+
+            Dim p As New System.Net.NetworkInformation.Ping()
+            L3.Invoke(New D_L3UpdCol(AddressOf L3UpdCol), Color.Gray)
+            For i = 0 To If(once, 0, 30)
+                L4.Invoke(New D_L4UpdText(AddressOf L4UpdText), $"{i}/30")
+
+                Dim reply As System.Net.NetworkInformation.PingReply = p.Send($"{strIP}", 100)
+                If reply.Status = System.Net.NetworkInformation.IPStatus.Success Then
+                    'L3.ForeColor = Color.Green
+                    L3.Invoke(New D_L3UpdCol(AddressOf L3UpdCol), Color.Green)
+                    L4.Invoke(New D_L4UpdText(AddressOf L4UpdText), $"{i}:起動済み。")
+                    Exit For
+                Else
+                    'L3.ForeColor = Color.Gray
+                    L3.Invoke(New D_L3UpdCol(AddressOf L3UpdCol), Color.Gray)
+                End If
+                If Not once Then Thread.Sleep(1000)
+            Next
+        End Sub
+    End Class
+
+    Private ttp As ThreadedPing
+    Private Sub Timer1_Tick(sender As Object, e As EventArgs) Handles Timer1.Tick
+        If ttp Is Nothing Then
+            ttp = New ThreadedPing
+        End If
+        ttp.SetL(Label3, Label4, TextBox2.Text)
     End Sub
 End Class
+
+
 
 'XMLファイルに保存するオブジェクトのためのクラス
 Public Class SampleClass
     Public IP As String
     Public MAC As String
 End Class
+
 

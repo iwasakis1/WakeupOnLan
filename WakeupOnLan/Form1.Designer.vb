@@ -22,6 +22,7 @@ Partial Class Form1
     'コード エディターを使って変更しないでください。
     <System.Diagnostics.DebuggerStepThrough()> _
     Private Sub InitializeComponent()
+        Me.components = New System.ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(Form1))
         Me.TextBox1 = New System.Windows.Forms.TextBox()
         Me.Label1 = New System.Windows.Forms.Label()
@@ -30,6 +31,7 @@ Partial Class Form1
         Me.Button1 = New System.Windows.Forms.Button()
         Me.Label3 = New System.Windows.Forms.Label()
         Me.Label4 = New System.Windows.Forms.Label()
+        Me.Timer1 = New System.Windows.Forms.Timer(Me.components)
         Me.SuspendLayout()
         '
         'TextBox1
@@ -76,20 +78,25 @@ Partial Class Form1
         'Label3
         '
         Me.Label3.AutoSize = True
-        Me.Label3.Location = New System.Drawing.Point(279, 128)
+        Me.Label3.Font = New System.Drawing.Font("MS UI Gothic", 27.75!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
+        Me.Label3.Location = New System.Drawing.Point(242, 108)
         Me.Label3.Name = "Label3"
-        Me.Label3.Size = New System.Drawing.Size(17, 12)
+        Me.Label3.Size = New System.Drawing.Size(54, 37)
         Me.Label3.TabIndex = 5
         Me.Label3.Text = "●"
         '
         'Label4
         '
         Me.Label4.AutoSize = True
-        Me.Label4.Location = New System.Drawing.Point(361, 128)
+        Me.Label4.Location = New System.Drawing.Point(302, 128)
         Me.Label4.Name = "Label4"
         Me.Label4.Size = New System.Drawing.Size(38, 12)
         Me.Label4.TabIndex = 6
         Me.Label4.Text = "Label4"
+        '
+        'Timer1
+        '
+        Me.Timer1.Interval = 3000
         '
         'Form1
         '
@@ -118,4 +125,5 @@ Partial Class Form1
     Friend WithEvents Button1 As Button
     Friend WithEvents Label3 As Label
     Friend WithEvents Label4 As Label
+    Friend WithEvents Timer1 As Timer
 End Class
