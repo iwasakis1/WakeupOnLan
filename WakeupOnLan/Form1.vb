@@ -1,10 +1,16 @@
 ﻿Imports System.ComponentModel
 Imports System
 Imports System.Threading
+Imports System.Reflection
 
 Public Class Form1
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles Me.Load
+
+        Dim assembly As Assembly = Assembly.GetExecutingAssembly()
+        Dim version As Version = assembly.GetName().Version
+        Label5.Text = $"version{version.ToString}"
+
         Dim fileName As String = $"{Application.StartupPath}\config.xml"
 
         'XmlSerializerオブジェクトを作成
