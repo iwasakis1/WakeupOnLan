@@ -1,7 +1,9 @@
-﻿Imports System.ComponentModel
-Imports System
-Imports System.Threading
+﻿Imports System
+Imports System.ComponentModel
+Imports System.Net
+Imports System.Net.Sockets
 Imports System.Reflection
+Imports System.Threading
 
 Public Class Form1
 
@@ -56,6 +58,7 @@ Public Class Form1
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
         Timer1.Enabled = False
 
+
         Dim strMAC As String = TextBox1.Text
         Dim strIP As String = TextBox2.Text
 
@@ -91,6 +94,34 @@ Public Class Form1
         ''EP = New System.Net.IPEndPoint(BCIP, RemotePort)
         '''送信先を指定してデータを送信する
         ''UDP.Send(sendBytes, sendBytes.Length, EP)
+
+        ' 1. TextBoxの入力文字列から、通常のIPアドレスオブジェクトを生成
+        Dim inputIP As IPAddress = Nothing
+
+        ' 入力値が正しいIPアドレスの形式かチェック（エラー落ちを防ぐ）
+        If IPAddress.TryParse(TextBox2.Text, inputIP) Then
+
+            ' 2. IPアドレスをバイト配列に分解（例: "192.168.10.5" -> {192, 168, 10, 5}）
+            Dim ipBytes() As Byte = inputIP.GetAddressBytes()
+
+            ' 3. 4番目の要素（末尾）を「255」に書き換える（インデックスは3）
+            ipBytes(3) = 255
+
+            ' 4. バイト配列から、送信先となるブロードキャスト用のIPAddressオブジェクトを生成
+            Dim targetIP As New IPAddress(ipBytes)
+
+            ' ---- ここから先は送信処理 ----
+            Dim client As New UdpClient()
+            client.EnableBroadcast = True
+            client.Connect(targetIP, 9)
+            ' magicPacketを送信
+            client.Send(sendBytes, sendBytes.Length)
+
+        Else
+            ' TextBoxの入力がIPアドレスの形式になっていない場合の処理
+            MessageBox.Show("正しいIPアドレスを入力してください。")
+        End If
+
 
         'ピンポイントのIPアドレス指定して送信するとき
         BCIP = System.Net.IPAddress.Parse(strIP)
